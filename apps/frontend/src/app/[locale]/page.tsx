@@ -1,0 +1,137 @@
+import { Link } from "@/i18n/navigation"
+import { server } from "@/utils/trpc/server"
+import { cn } from "@heroui/react"
+import { IconArrowRight } from "@tabler/icons-react"
+import { getTranslations } from "next-intl/server"
+import { Typography } from "@heroui/react"
+import { createSerializer } from "nuqs/server"
+import type { CourseCampus, CourseListItem, Semester, TeachingLanguage } from "@grades/backend/course"
+import { CourseAutocomplete } from "./components/course-autocomplete/CourseAutocomplete"
+import { CourseRow } from "./components/CourseRow/CourseRow"
+import { CourseFilterParsers } from "./emner/course-filter-parsers"
+
+const serialize = createSerializer(CourseFilterParsers)
+
+type FilterChip =
+  | { label: string; key: "bySemester"; value: Semester }
+  | { label: string; key: "byCampus"; value: CourseCampus }
+  | { label: string; key: "byTeachingLanguage"; value: TeachingLanguage }
+
+export default async function App() {
+  const t = await getTranslations()
+
+  const filterChips = [
+    { label: t(`Enums.Semester.SPRING`), key: "bySemester", value: "SPRING" },
+    { label: t(`Enums.Semester.AUTUMN`), key: "bySemester", value: "AUTUMN" },
+    { label: t(`Enums.Campus.TRONDHEIM`), key: "byCampus", value: "TRONDHEIM" },
+    { label: t(`Enums.Campus.GJOVIK`), key: "byCampus", value: "GJOVIK" },
+    { label: t(`Enums.Campus.ALESUND`), key: "byCampus", value: "ALESUND" },
+  ] satisfies ReadonlyArray<FilterChip>
+
+  const { activeSemesterCourses, largestCourses, activeSemester } = await server.course.findFeaturedCourses.query()
+
+  return (
+    <div className="flex flex-col gap-10 sm:gap-12">
+      <div className="flex flex-col gap-5 sm:gap-6">
+        <div className="flex flex-col gap-1.5 max-w-2xl">
+          <Typography type="h1" className="text-xl sm:text-2xl font-bold tracking-tight">
+            {t("Frontpage.heading")}
+          </Typography>
+        </div>
+
+        <div className="flex flex-col gap-2.5 max-w-2xl">
+          <CourseAutocomplete
+            defaultValues={{}}
+            placeholder={t("Frontpage.searchPlaceholder")}
+            className="w-full"
+            inputClassName="h-11 text-base md:text-base!"
+          />
+          <div className="flex flex-row flex-wrap gap-2">
+            {filterChips.map((chip) => {
+              const href = `/emner${serialize({ [chip.key]: [chip.value] })}`
+
+              return <FilterChipLink key={href} href={href} label={chip.label} />
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-8 sm:gap-10">
+        <CourseSection
+          courses={activeSemesterCourses}
+          title={t(`Frontpage.activeSemesterCoursesTitle.${activeSemester}`)}
+          seeMoreHref={`/emner${serialize({ bySemester: [activeSemester] })}`}
+          seeMoreLabel={t(`Frontpage.seeMoreLabel.${activeSemester}`)}
+        />
+        <CourseSection
+          courses={largestCourses}
+          title={t("Frontpage.largestCoursesTitle")}
+          seeMoreHref={`/emner${serialize({ sortBy: ["CANDIDATE_COUNT"] })}`}
+          seeMoreLabel={t("Frontpage.seeMoreLabel.popular")}
+        />
+      </div>
+    </div>
+  )
+}
+
+interface FilterChipLinkProps {
+  href: string
+  label: string
+}
+
+const FilterChipLink = ({ href, label }: FilterChipLinkProps) => {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "shrink-0 rounded-lg border px-2 py-1 text-xs font-medium outline-none transition-colors sm:px-2.5 sm:py-1.5 sm:text-sm",
+        "border-border bg-overlay text-neutral-700 dark:text-stone-300",
+        "hover:border-neutral-300 hover:bg-neutral-50",
+        "focus-visible:border-neutral-400",
+        "dark:hover:border-stone-600 dark:hover:bg-default",
+        "dark:focus-visible:border-stone-500"
+      )}
+    >
+      {label}
+    </Link>
+  )
+}
+
+interface CourseSectionProps {
+  courses: CourseListItem[]
+  title: string
+  seeMoreHref: string
+  seeMoreLabel: string
+}
+
+const CourseSection = ({ courses, title, seeMoreHref, seeMoreLabel }: CourseSectionProps) => {
+  if (courses.length === 0) {
+    return null
+  }
+
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex flex-row justify-between items-center gap-3">
+        <Typography type="h2" className="min-w-0 text-lg font-semibold">
+          {title}
+        </Typography>
+        <Link
+          href={seeMoreHref}
+          className="p-1 rounded-lg group flex shrink-0 whitespace-nowrap items-center gap-1 text-sm font-medium text-neutral-600 hover:text-neutral-900 focus:text-neutral-900 dark:text-stone-400 dark:hover:text-stone-200 dark:focus:text-stone-200 transition-colors"
+        >
+          {seeMoreLabel}
+          <IconArrowRight
+            size={16}
+            className="motion-safe:transition-transform motion-safe:group-hover:translate-x-1 motion-safe:group-focus:translate-x-1"
+          />
+        </Link>
+      </div>
+
+      <div className="rounded-xl border border-border divide-y divide-border [&>a:first-child]:rounded-t-xl [&>a:last-child]:rounded-b-xl">
+        {courses.map((course) => (
+          <CourseRow key={course.id} course={course} />
+        ))}
+      </div>
+    </section>
+  )
+}

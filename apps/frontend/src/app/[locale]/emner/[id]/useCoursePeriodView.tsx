@@ -1,0 +1,110 @@
+import { usePlausible } from "next-plausible"
+import { useQueryStates } from "nuqs"
+import { useEffect } from "react"
+import { sortGradeDistributionsByYearAndSemester, type GradeDistribution } from "@grades/backend/grade-distribution"
+import { CoursePageParsers, type PeriodSelection } from "./course-page-params"
+import {
+  getFallbackComparisonPeriodSelection,
+  getGradeDistributionsForSelection,
+  isSamePeriodSelection,
+  resolvePeriodSelection,
+} from "./utils"
+
+export function useCoursePeriodView(gradeDistributions: GradeDistribution[]) {
+  const plausible = usePlausible()
+
+  const [params, setParams] = useQueryStates(CoursePageParsers)
+
+  const periodSelection = resolvePeriodSelection(params.period, gradeDistributions)
+  let comparisonPeriodSelection = resolvePeriodSelection(params.compare, gradeDistributions)
+
+  if (isSamePeriodSelection(periodSelection, comparisonPeriodSelection)) {
+    comparisonPeriodSelection = getFallbackComparisonPeriodSelection(periodSelection)
+  }
+
+  const selectedRows = getGradeDistributionsForSelection(periodSelection, gradeDistributions)
+  const comparisonRows = getGradeDistributionsForSelection(comparisonPeriodSelection, gradeDistributions)
+
+  const setPeriod = (period: PeriodSelection) => {
+    // If the new period is the same as the comparison period, update the comparison period to a fallback
+    const nextCompare = isSamePeriodSelection(period, comparisonPeriodSelection)
+      ? getFallbackComparisonPeriodSelection(period)
+      : comparisonPeriodSelection
+
+    setParams({ period, compare: nextCompare })
+
+    plausible("Course Period Changed", {
+      props: {
+        period: periodSelectionToPlausibleProp(period, gradeDistributions),
+      },
+    })
+  }
+
+  const setCompare = (compare: PeriodSelection) => {
+    setParams({ compare })
+
+    plausible("Course Compare Changed", {
+      props: {
+        compare: periodSelectionToPlausibleProp(compare, gradeDistributions),
+      },
+    })
+  }
+
+  const setOverlay = (overlay: boolean) => {
+    setParams({ overlay })
+
+    plausible("Course Overlay Changed", {
+      props: {
+        overlay: overlay ? "enabled" : "disabled",
+      },
+    })
+  }
+
+  // If the period or comparison period is changed during resolution, update the query params
+  useEffect(() => {
+    const periodNeedsFix = params.period != null && !isSamePeriodSelection(params.period, periodSelection)
+    const compareNeedsFix = !isSamePeriodSelection(params.compare, comparisonPeriodSelection)
+
+    if (!periodNeedsFix && !compareNeedsFix) {
+      return
+    }
+
+    void setParams(
+      {
+        period: params.period === null ? null : periodSelection,
+        compare: comparisonPeriodSelection,
+      },
+      { history: "replace" }
+    )
+  }, [periodSelection, comparisonPeriodSelection, params.period, params.compare, setParams])
+
+  return {
+    params,
+    setPeriod,
+    setCompare,
+    setOverlay,
+    periodSelection,
+    comparisonPeriodSelection,
+    selectedRows,
+    comparisonRows,
+  }
+}
+
+function periodSelectionToPlausibleProp(period: PeriodSelection, gradeDistributions: GradeDistribution[]): string {
+  if (period.kind === "preset") {
+    return period.preset.toLowerCase()
+  }
+
+  const latestGradeDistribution = sortGradeDistributionsByYearAndSemester(gradeDistributions).at(0)
+
+  if (
+    period.semester === null ||
+    latestGradeDistribution === undefined ||
+    (period.semester.year === latestGradeDistribution.year &&
+      period.semester.semester === latestGradeDistribution.semester)
+  ) {
+    return "latest_semester"
+  }
+
+  return "other_semester"
+}

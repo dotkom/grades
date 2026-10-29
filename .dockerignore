@@ -1,0 +1,14 @@
+.github
+.idea
+.vscode
+.next
+.git
+
+.dockerignore
+.env*
+
+node_modules
+out
+build
+dist
+coverage

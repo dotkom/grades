@@ -1,0 +1,7 @@
+setup:
+  - project: grades-backend
+    config: dev_personal
+    path: apps/backend
+  - project: grades-frontend
+    config: dev_personal
+    path: apps/frontend

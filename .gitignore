@@ -1,0 +1,94 @@
+# NPM
+node_modules/
+
+# Next.js build files
+.next/
+
+# Environment variables
+.env
+.env.*
+.envrc
+.envrc.*
+!.env.example
+!.env.*.example
+
+# MCP / local tool configs
+.mcp.json
+.mcp/
+*.mcp.local.json
+
+# Package managers
+.pnp.*
+package-lock.json
+.pnpm-store/
+
+# AI / coding agents / local assistant state
+.cursor/
+.cursor.local/
+.cursorrules.local
+.cursorignore.local
+.cursorindexingignore.local
+
+.windsurf/
+.windsurf.local/
+
+.claude/settings.local.json
+.claude/.credentials.json
+.claude/.session*
+.claude/logs/
+
+.codex/
+.openai/
+.gemini/
+.aider*
+.aider.chat.history.md
+.aider.input.history
+.aider.tags.cache*
+.continue/
+.tabnine/
+.cody/
+.cline/
+.roo/
+.ai/
+.ai-cache/
+.agent/
+.agent-cache/
+
+# IDE specific
+.idea/
+.vscode/
+
+# JetBrains / WebStorm
+*.iml
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries/
+.idea/**/shelf/
+.idea/**/httpRequests/
+.idea/**/dataSources/
+.idea/**/dataSources.ids
+.idea/**/dataSources.local.xml
+.idea/**/sqlDataSources.xml
+.idea/**/dynamic.xml
+.idea/**/uiDesigner.xml
+.idea/**/dbnavigator.xml
+.idea/**/aws.xml
+
+# TypeScript
+*.tsbuildinfo
+
+# Builds / reports
+dist/
+build/
+coverage/
+
+# OS files
+.DS_Store
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Sentry local clirc files
+.sentryclirc

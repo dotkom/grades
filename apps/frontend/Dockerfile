@@ -1,0 +1,89 @@
+# syntax=docker/dockerfile:1
+
+FROM node:22-alpine@sha256:1b2479dd35a99687d6638f5976fd235e26c5b37e8122f786fcd5fe231d63de5b AS base
+
+# Next.js evaluates a lot of code at build-time for things like SSG and SSR. For this reason, we need some of the
+# runtime variables to be available at build-time.
+#
+# Only non-secret configuration uses build arguments. Credentials are mounted for the build command below.
+ARG NEXT_PUBLIC_ORIGIN
+ARG NEXT_PUBLIC_BACKEND_HOST
+ARG NEXT_PUBLIC_HOME_URL
+ARG BACKEND_HOST
+
+ARG SENTRY_DSN
+ARG SENTRY_RELEASE
+
+ARG DOPPLER_ENVIRONMENT
+
+# Step 1: Build the Next.js application along with the necessary build variables.
+FROM base AS builder
+WORKDIR /app
+
+COPY . .
+
+RUN apk update && apk add --no-cache libc6-compat
+RUN npm install -g pnpm@10.28.2 --ignore-scripts
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+ENV NEXT_PUBLIC_ORIGIN=${NEXT_PUBLIC_ORIGIN}
+ENV NEXT_PUBLIC_BACKEND_HOST=${NEXT_PUBLIC_BACKEND_HOST}
+ENV NEXT_PUBLIC_HOME_URL=${NEXT_PUBLIC_HOME_URL}
+ENV BACKEND_HOST=${BACKEND_HOST}
+
+# The following are public build-time variables that instrument and configure Sentry
+ENV SENTRY_DSN=${SENTRY_DSN}
+ENV NEXT_PUBLIC_SENTRY_DSN=${SENTRY_DSN}
+ENV SENTRY_RELEASE=${SENTRY_RELEASE}
+ENV NEXT_PUBLIC_SENTRY_RELEASE=${SENTRY_RELEASE}
+ENV DOPPLER_ENVIRONMENT=${DOPPLER_ENVIRONMENT}
+ENV NEXT_PUBLIC_DOPPLER_ENVIRONMENT=${DOPPLER_ENVIRONMENT}
+
+# Allow Sentry to upload build artifacts without storing the token in image metadata or layers.
+RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN,env=SENTRY_AUTH_TOKEN \
+    pnpm run --filter @grades/frontend build
+
+# Step 2: Only install the necessary dependencies for the production build of this application.
+FROM base AS installer
+WORKDIR /app
+
+COPY . .
+
+# First, we install the prerequisites to build the Prisma client.
+RUN apk update && apk add --no-cache libc6-compat
+RUN npm install -g pnpm@10.28.2 --ignore-scripts
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+# We can now install the actual production dependencies.
+RUN pnpm install --frozen-lockfile --ignore-scripts --prod --config.confirmModulesPurge=false
+
+# Step 3: Run the actual application and finalize the image.
+FROM base AS runner
+WORKDIR /app
+
+RUN apk add --no-cache curl
+
+EXPOSE 3000
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
+# Embed the Sentry release ID into the container.
+ARG SENTRY_RELEASE
+ENV SENTRY_RELEASE=${SENTRY_RELEASE}
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+USER nextjs
+
+COPY --from=installer --chown=nextjs:nodejs --chmod=755 /app/node_modules ./node_modules
+COPY --from=installer --chown=nextjs:nodejs --chmod=755 /app/apps/frontend/node_modules ./apps/frontend/node_modules
+
+COPY --from=builder --chown=nextjs:nodejs --chmod=755 /app/apps/frontend/.next ./apps/frontend/.next
+COPY --from=builder --chown=nextjs:nodejs --chmod=755 /app/apps/frontend/public ./apps/frontend/public
+COPY --from=builder --chown=nextjs:nodejs --chmod=755 /app/apps/frontend/package.json ./apps/frontend/package.json
+
+WORKDIR /app/apps/frontend
+
+CMD ["npm", "run", "start"]

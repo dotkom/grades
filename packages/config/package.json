@@ -1,0 +1,17 @@
+{
+  "name": "@grades/config",
+  "sideEffects": false,
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "lint": "biome check . --write",
+    "lint-check": "biome check ."
+  },
+  "files": [
+    "tsconfig.json"
+  ],
+  "devDependencies": {
+    "@biomejs/biome": "2.4.16",
+    "typescript": "7.0.2"
+  }
+}

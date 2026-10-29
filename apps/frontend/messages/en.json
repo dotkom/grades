@@ -1,0 +1,245 @@
+{
+  "Enums": {
+    "Semester": {
+      "SPRING": "Spring",
+      "AUTUMN": "Autumn",
+      "SUMMER": "Resit"
+    },
+    "Campus": {
+      "TRONDHEIM": "Trondheim",
+      "GJOVIK": "Gjøvik",
+      "ALESUND": "Ålesund"
+    },
+    "TeachingLanguage": {
+      "NORWEGIAN": "Norwegian",
+      "ENGLISH": "English"
+    },
+    "StudyLevel": {
+      "BACHELOR_ADVANCED": "Bachelor (advanced)",
+      "CONTINUING_EDUCATION": "Continuing education",
+      "FOUNDATION": "Foundation",
+      "INTERMEDIATE": "Intermediate",
+      "MASTER": "Master",
+      "PHD": "PhD",
+      "UNKNOWN": "Unknown"
+    },
+    "SemesterShort": {
+      "SPRING": "S",
+      "SUMMER": "C",
+      "AUTUMN": "A"
+    },
+    "PeriodPreset": {
+      "ALL_YEARS": "All years",
+      "LAST_THREE_YEARS": "Last 3 years"
+    }
+  },
+  "Common": {
+    "Semester": "Semester",
+    "credits": "{credits} <unit>ECTS</unit>"
+  },
+  "Metadata": {
+    "layout": {
+      "title": "Grade statistics | Grades.no",
+      "description": "Grade statistics for courses at NTNU. Averages, grade distributions and pass rates."
+    },
+    "courseListPage": {
+      "title": "Courses | Grades.no",
+      "description": "Search for courses at NTNU and see averages, grade distributions and pass rates."
+    },
+    "coursePage": {
+      "title": "{courseCode} - {courseName}{aliasSuffix} | Grades.no",
+      "description": "Grade statistics for {courseCode} {courseName} at NTNU. Averages, grade distributions and pass rates.",
+      "notFound": {
+        "title": "Course not found | Grades.no",
+        "description": "This course doesn't exist on Grades.no."
+      }
+    }
+  },
+  "Navbar": {
+    "home": "Home",
+    "courses": "All courses",
+    "openNavigation": "Open navigation",
+    "closeNavigation": "Close navigation",
+    "theme": "Theme",
+    "language": "Language",
+    "courseSearchPlaceholder": "Search for courses..."
+  },
+  "ThemePopover": {
+    "ariaLabel": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "LocalePopover": {
+    "ariaLabel": "Language: {language}",
+    "norwegian": "Norsk",
+    "english": "English"
+  },
+  "CourseCard": {
+    "lastTaught": "Last taught {year}",
+    "passFail": "Pass / fail",
+    "passRate": "{rate}% passed"
+  },
+  "Frontpage": {
+    "heading": "Grade statistics for NTNU courses",
+    "activeSemesterCoursesTitle": {
+      "SPRING": "Courses taught in spring",
+      "AUTUMN": "Courses taught in autumn"
+    },
+    "largestCoursesTitle": "Most popular courses",
+    "searchPlaceholder": "Search by name or course code...",
+    "subheading": "Grade statistics for NTNU courses",
+    "seeMoreLabel": {
+      "popular": "See all popular courses",
+      "AUTUMN": "See all autumn courses",
+      "SPRING": "See all spring courses"
+    }
+  },
+  "Footer": {
+    "tagline": "To the students at NTNU, with love <3",
+    "madeBy": "Made by Dotkom · <online>Online</online>",
+    "github": "GitHub",
+    "contact": "Contact",
+    "dataSources": "Grade data from DBH / HK-dir. Course information from NTNU."
+  },
+  "CourseFilters": {
+    "ariaLabel": "Course filters",
+    "openAriaLabel": "Open filters",
+    "closeAriaLabel": "Close filters",
+    "drawerTitle": "Filter courses",
+    "filterButton": "Filter",
+    "sortBy": "Sort by",
+    "semester": "Semester",
+    "teachingLanguage": "Language",
+    "campus": "Campus",
+    "minGrade": "Grade",
+    "minGradeOptions": {
+      "ALL": "All",
+      "A": "A",
+      "B": "Minimum B",
+      "C": "Minimum C",
+      "D": "Minimum D",
+      "E": "Minimum E"
+    },
+    "clearAll": "Clear all",
+    "activeFilters": "Active filters"
+  },
+  "CourseAutocomplete": {
+    "placeholder": "Search for courses...",
+    "noResults": "No courses found",
+    "seeAllResults": "See all results"
+  },
+  "CourseList": {
+    "empty": {
+      "title": "No courses found",
+      "hint": "Try removing or changing your filters.",
+      "clearFilters": "Clear all filters"
+    }
+  },
+  "CourseListToolbar": {
+    "searchPlaceholder": "Search for courses...",
+    "totalCount": "{totalCount, plural, one {# course} other {# courses}}",
+    "sortOptions": {
+      "mostCandidates": "Most students",
+      "highestGrade": "Highest average",
+      "highestPassRate": "Highest pass rate",
+      "leastCandidates": "Least students",
+      "lowestGrade": "Lowest average",
+      "lowestPassRate": "Lowest pass rate"
+    }
+  },
+  "CourseListPage": {
+    "heading": "Browse courses"
+  },
+  "CoursePage": {
+    "common": {
+      "semesterLabel": "{semester} {year}",
+      "compareAgainst": {
+        "ALL_YEARS": "Compared to all years",
+        "LAST_THREE_YEARS": "Compared to last 3 years",
+        "semester": "Compared to {label}"
+      },
+      "compareAgainstShort": {
+        "ALL_YEARS": "vs all years",
+        "LAST_THREE_YEARS": "vs last 3 years",
+        "semester": "vs {label}"
+      },
+      "compareAgainstCompact": {
+        "ALL_YEARS": "vs all years",
+        "LAST_THREE_YEARS": "vs last 3 years",
+        "semester": "vs {label}"
+      }
+    },
+    "noGrades": {
+      "title": "No grade statistics yet",
+      "hint": "We don't have grade data for this course yet. Statistics may appear once results are published."
+    },
+    "notFound": {
+      "title": "Course not found",
+      "hint": "We couldn't find the course you're looking for. Check the course code, or search <link>here</link>."
+    },
+    "semesterTabs": {
+      "olderSemesters": "Older semesters"
+    },
+    "barChart": {
+      "title": "Grade distribution",
+      "showComparison": "Show comparison",
+      "compareDisabledReason": "Not enough data to compare",
+      "compareDisabledNotComparable": "Not comparable",
+      "percent": "{value, number}%",
+      "grades": {
+        "PASS": "Pass",
+        "FAIL": "Fail",
+        "PASSShort": "Pass",
+        "FAILShort": "Fail"
+      }
+    },
+    "lineChart": {
+      "averageOverTime": "Average over time",
+      "passRateOverTime": "Pass rate over time"
+    },
+    "kpiCard": {
+      "title": "Overview",
+      "comparisonSameAsPeriod": "Already selected as period",
+      "comparisonNotComparable": "Not comparable",
+      "averageGrade": "Average grade",
+      "passRate": "Pass rate",
+      "passRateDiff": "{count, number} points",
+      "diffEqual": "same",
+      "compareSelectAriaLabel": "Compare against",
+      "candidateCount": "{count, number} candidates",
+      "rangeBar": {
+        "minAverage": "Lowest average: {semester}",
+        "maxAverage": "Highest average: {semester}",
+        "minPassRate": "Lowest pass rate: {semester}",
+        "maxPassRate": "Highest pass rate: {semester}",
+        "periodValue": "{period}: {value}"
+      }
+    },
+    "CourseAbout": {
+      "content": "Content",
+      "learningOutcomes": "Learning outcomes",
+      "teachingMethods": "Teaching methods",
+      "title": "About this course",
+      "CreditReductions": {
+        "title": "Credit reductions",
+        "description": "{code} is worth {credits} ECTS, but fewer if you have already taken any of the courses below.",
+        "descriptionWithoutCredits": "{code} gives fewer credits if you have already taken any of the courses below.",
+        "seeMore": "{count, plural, one {See # more} other {See # more}}",
+        "showLess": "Show less"
+      },
+      "Meta": {
+        "studyLevel": "Study level",
+        "examType": "Assessment form",
+        "faculty": "Faculty",
+        "department": "Department",
+        "taughtSince": "Taught since",
+        "candidateCount": "Total candidates",
+        "dataLastUpdated": "Last updated"
+      }
+    }
+  },
+  "ScrollToTop": {
+    "ariaLabel": "Scroll to top"
+  }
+}

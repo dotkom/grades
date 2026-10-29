@@ -1,0 +1,57 @@
+{
+  "name": "grades",
+  "version": "1.0.0",
+  "description": "Web application for viewing and comparing NTNU courses and grades (grades.no).",
+  "keywords": [
+    "grades",
+    "ntnu",
+    "online",
+    "student-association"
+  ],
+  "homepage": "https://grades.no",
+  "author": "Dotkom <dotkom@online.ntnu> (https://online.ntnu.no)",
+  "bugs": {
+    "email": "dotkom+bugs@online.ntnu.no",
+    "url": "https://github.com/dotkom/grades/issues"
+  },
+  "repository": "github:dotkom/grades",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "pnpm run -r --if-present build",
+    "lint": "pnpm run -r lint",
+    "lint-check": "pnpm run -r lint-check",
+    "prisma-schema-lint-check": "prisma-lint packages/db/prisma/schema.prisma",
+    "test": "pnpm run -r --if-present test",
+    "test:it": "pnpm run -r --if-present test:it",
+    "dev": "pnpm -rc --parallel -F @grades/backend -F @grades/frontend exec doppler run --preserve-env pnpm run dev",
+    "prisma": "doppler run --config dev --project grades-backend --preserve-env -- pnpm -F @grades/db prisma",
+    "generate": "doppler run --config dev --project grades-backend --preserve-env -- pnpm -F @grades/db generate",
+    "migrate:dev": "doppler run --config dev --project grades-backend --preserve-env -- pnpm -F @grades/db migrate",
+    "migrate:dev-with-fixtures": "doppler run --config dev --project grades-backend --preserve-env -- pnpm -F @grades/db prisma migrate dev && doppler run --config dev --project grades-backend --preserve-env -- pnpm -F @grades/db apply-fixtures",
+    "migrate:deploy": "doppler run --config prd --project grades-backend --preserve-env -- pnpm -F @grades/db prisma migrate deploy",
+    "migrate:prod": "doppler run --config prd --project grades-backend -- pnpm migrate:deploy",
+    "sync:dev": "doppler run --config dev --project grades-backend --preserve-env -- pnpm -F @grades/backend sync-grades",
+    "migrate-old-grades-data:dev": "doppler run --config dev --project grades-backend --preserve-env -- pnpm -F @grades/backend migrate-old-grades-data",
+    "seed-aliases:dev": "doppler run --config dev --project grades-backend --preserve-env -- pnpm -F @grades/backend seed-aliases",
+    "seed-aliases:prod": "doppler run --config prd --project grades-backend --preserve-env -- pnpm -F @grades/backend seed-aliases",
+    "recalculate-course-statistics:dev": "doppler run --config dev --project grades-backend --preserve-env -- pnpm -F @grades/backend recalculate-course-statistics",
+    "type-check": "pnpm run -r type-check",
+    "docker:login": "aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 891459268445.dkr.ecr.eu-north-1.amazonaws.com",
+    "shell": "pnpm -F @grades/backend shell"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "packageManager": "pnpm@10.28.2+sha512.41872f037ad22f7348e3b1debbaf7e867cfd448f2726d9cf74c08f19507c31d2c8e7a11525b983febc2df640b5438dee6023ebb1f84ed43cc2d654d2bc326264",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.15.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.16",
+    "prisma-lint": "0.13.1",
+    "typescript": "7.0.2"
+  }
+}

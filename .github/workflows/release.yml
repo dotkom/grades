@@ -1,0 +1,95 @@
+# Perform a full release of the Grades applications
+
+name: Production Release
+on:
+  workflow_dispatch:
+    inputs:
+      git-hash:
+        description: 'Git hash to release (leave empty to use latest on main)'
+        required: false
+
+concurrency:
+  group: grades-production
+  cancel-in-progress: true
+
+env:
+  DEPLOYMENT_TARGET_HASH: ${{ github.event.inputs.git-hash || github.sha }}
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  migrate:
+    name: Run database migrations
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 10.28.2
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 22.23.3
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        name: Install dependencies from pnpm lockfile
+      - uses: ./.github/actions/internal/doppler-secrets
+        with:
+          project: grades-backend
+          config: prd
+      - run: pnpm run migrate:deploy
+        name: Apply Prisma migrations against prod
+
+  build-backend:
+    name: backend
+    runs-on: ubuntu-24.04-arm
+    needs:
+      - migrate
+    steps:
+      - name: Install local GitHub Actions
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 1
+          sparse-checkout: '.github'
+          sparse-checkout-cone-mode: true
+      - uses: ./.github/actions/build-backend
+        with:
+          deploy: true
+          environment: prd
+          git-hash: ${{ env.DEPLOYMENT_TARGET_HASH }}
+
+  build-frontend:
+    name: frontend
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Install local GitHub Actions
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 1
+          sparse-checkout: '.github'
+          sparse-checkout-cone-mode: true
+      - uses: ./.github/actions/build-frontend
+        with:
+          deploy: true
+          environment: prd
+          git-hash: ${{ env.DEPLOYMENT_TARGET_HASH }}
+
+  notify:
+    name: Notify users about trigger
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Submit message to \#prod-ops-feed in Slack
+        uses: slackapi/slack-github-action@0d95c9a7becc1e6e297d76df9bc735c44f4cbcbc # v3.0.5
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "*Ny Grades release started av ${{ github.triggering_actor }}*"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*Ny Grades release started av ${{ github.triggering_actor }}*"

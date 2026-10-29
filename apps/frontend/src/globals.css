@@ -1,0 +1,227 @@
+@import "@heroui/styles";
+
+/*
+ * HeroUI's dark variant also falls back to prefers-color-scheme, which applies
+ * dark: utilities even when next-themes has set data-theme="light". Restrict to
+ * an explicit dark theme so light mode keeps light utilities.
+ */
+@custom-variant dark (&:where(
+  .dark,
+  .dark *,
+  [data-theme="dark"],
+  [data-theme="dark"] *
+));
+
+@theme inline {
+  --font-heading: var(--font-title);
+  --font-sans: var(--font-body);
+  --font-body: var(--font-body);
+
+  --shadow-b-sm: 0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.06);
+}
+
+@theme {
+  --breakpoint-xs: 30rem; /* 480px */
+}
+
+@layer base {
+  body {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .typography--h1,
+  .typography--h2,
+  .typography--h3,
+  .typography--h4,
+  .typography--h5,
+  .typography--h6 {
+    @apply font-heading;
+  }
+
+  /* Shared control shape: less pill, no shadow, no press-scale */
+  .button {
+    @apply rounded-lg shadow-none;
+  }
+
+  .button:active,
+  .button[data-pressed="true"] {
+    transform: none;
+  }
+
+  /*
+   * Outline controls should match inputs/selects (bordered field chrome).
+   * Ghost/secondary/tertiary already use --default from HeroUI — tune that token.
+   */
+  .button--outline {
+    border-color: var(--field-border);
+    border-width: var(--border-width-field);
+    --button-bg: var(--field-background);
+    --button-bg-hover: var(--field-hover);
+    --button-bg-pressed: var(--field-hover);
+    --button-fg: var(--field-foreground);
+  }
+
+  @media (hover: hover) {
+    .button--outline:hover,
+    .button--outline[data-hovered="true"] {
+      border-color: var(--field-border-hover);
+    }
+  }
+
+  .button--outline:focus-visible:not([data-focused]),
+  .button--outline[data-focus-visible="true"] {
+    border-color: var(--field-border-focus);
+  }
+
+  /*
+   * ComboBox.InputGroup is layout-only in HeroUI — give it the same field
+   * chrome as InputGroup / Select.
+   */
+  .combo-box__input-group {
+    @apply rounded-field border bg-field text-sm text-field-foreground shadow-field;
+    border-width: var(--border-width-field);
+    border-color: var(--field-border);
+    transition:
+      background-color 150ms var(--ease-smooth),
+      border-color 150ms var(--ease-smooth),
+      box-shadow 150ms var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .combo-box__input-group:hover {
+      background-color: var(--field-hover);
+      border-color: var(--field-border-hover);
+    }
+  }
+
+  .combo-box__input-group:focus-within {
+    border-color: var(--field-border-focus);
+    background-color: var(--field-focus);
+    --tw-ring-shadow: 0 0 #0000;
+    box-shadow: var(--field-shadow);
+  }
+
+  .combo-box__input-group [data-slot="input"],
+  .combo-box__input-group [data-slot="input"]:focus,
+  .combo-box__input-group [data-slot="input"][data-focus],
+  .combo-box__input-group [data-slot="input"][data-focus-visible] {
+    border-color: transparent;
+    background-color: transparent;
+    box-shadow: none;
+    --tw-ring-shadow: 0 0 #0000;
+  }
+
+  /* Prefer border change over focus rings on fields */
+  .input-group:has([data-slot="input-group-input"]:focus),
+  .input-group:has([data-slot="input-group-textarea"]:focus),
+  .select__trigger:focus-visible:not([data-focused]),
+  .select__trigger[data-focus-visible="true"] {
+    --tw-ring-shadow: 0 0 #0000;
+    box-shadow: var(--field-shadow);
+  }
+}
+
+/* ─── Theme tokens (HeroUI) ─── */
+
+:root,
+.light,
+.default,
+[data-theme="light"],
+[data-theme="default"] {
+  --color-brand: #5d58d3;
+  --accent: var(--color-brand);
+  --accent-foreground: #ffffff;
+  /* Match page canvas (was bg-white) so bg-background stays visually identical */
+  --background: oklch(100% 0 280);
+  --border: var(--color-neutral-200);
+  --danger: oklch(65.32% 0.2328 28.88);
+  --danger-foreground: oklch(99.11% 0 0);
+  /* Soft fill / ghost hover — matches navbar Alle emner */
+  --default: var(--color-neutral-100);
+  --default-foreground: oklch(21.03% 0.0059 280);
+  --field-background: oklch(100% 0 280);
+  --field-border: var(--border);
+  --field-border-width: 1px;
+  --border-width-field: 1px;
+  --field-hover: var(--field-background);
+  --field-focus: var(--field-background);
+  --field-foreground: oklch(21.03% 0 280);
+  --field-placeholder: oklch(55.17% 0 280);
+  --field-shadow: 0 0 0 0 transparent;
+  --focus: var(--accent);
+  --foreground: oklch(21.03% 0 280);
+  --muted: oklch(55.17% 0 280);
+  --overlay: oklch(100% 0 280);
+  --overlay-foreground: oklch(21.03% 0 280);
+  --scrollbar: oklch(87.1% 0 280);
+  --segment: oklch(100% 0 280);
+  --segment-foreground: oklch(21.03% 0 280);
+  --separator: var(--border);
+  --success: oklch(73.29% 0.1935 153.95);
+  --success-foreground: oklch(21.03% 0.0059 153.95);
+  --surface: oklch(100% 0 280);
+  --surface-foreground: oklch(21.03% 0 280);
+  --surface-secondary: oklch(95.24% 0 280);
+  --surface-secondary-foreground: oklch(21.03% 0 280);
+  --surface-tertiary: oklch(93.73% 0 280);
+  --surface-tertiary-foreground: oklch(21.03% 0 280);
+  --warning: oklch(78.19% 0.1585 75.47);
+  --warning-foreground: oklch(21.03% 0.0059 75.47);
+  --chart-history: #a3a3a3;
+
+  --radius: 0.5rem;
+  --field-radius: var(--radius);
+  --font-sans: var(--font-body);
+}
+
+.dark,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-brand: #5d58d3;
+  --accent: var(--color-brand);
+  --accent-foreground: #ffffff;
+  /* Match page canvas (was dark:bg-stone-900) */
+  --background: var(--color-stone-900);
+  --border: var(--color-stone-700);
+  --danger: oklch(59.4% 0.1967 27.77);
+  --danger-foreground: oklch(99.11% 0 0);
+  /* Soft fill / ghost hover — matches navbar Alle emner */
+  --default: var(--color-stone-700);
+  --default-foreground: oklch(99.11% 0 0);
+  --field-background: var(--color-stone-800);
+  --field-border: var(--border);
+  --field-border-width: 1px;
+  --border-width-field: 1px;
+  --field-hover: var(--field-background);
+  --field-focus: var(--field-background);
+  --field-foreground: oklch(99.11% 0 280);
+  --field-placeholder: oklch(70.5% 0 280);
+  --field-shadow: 0 0 0 0 transparent;
+  --focus: var(--accent);
+  --foreground: oklch(99.11% 0 280);
+  --muted: oklch(70.5% 0 280);
+  --overlay: var(--color-stone-800);
+  --overlay-foreground: oklch(99.11% 0 280);
+  --scrollbar: oklch(70.5% 0 280);
+  --segment: oklch(39.64% 0 280);
+  --segment-foreground: oklch(99.11% 0 280);
+  --separator: var(--border);
+  --success: oklch(73.29% 0.1935 153.95);
+  --success-foreground: oklch(21.03% 0.0059 153.95);
+  --surface: oklch(21.03% 0 280);
+  --surface-foreground: oklch(99.11% 0 280);
+  --surface-secondary: oklch(25.7% 0 280);
+  --surface-secondary-foreground: oklch(99.11% 0 280);
+  --surface-tertiary: oklch(27.21% 0 280);
+  --surface-tertiary-foreground: oklch(99.11% 0 280);
+  --warning: oklch(82.03% 0.1388 79.48);
+  --warning-foreground: oklch(21.03% 0.0059 79.48);
+  --chart-history: var(--muted);
+
+  --radius: 0.5rem;
+  --field-radius: var(--radius);
+}

@@ -1,0 +1,168 @@
+import { type DBHandle, sql } from "../../../../../packages/db/src"
+import { parseOrReport } from "../../invariant"
+import { type CourseDetail, CourseDetailSchema } from "./course-detail"
+import {
+  type Course,
+  type CourseCreditReductionWrite,
+  type CourseFilterQuery,
+  type CourseId,
+  type CourseListItem,
+  CourseListItemSchema,
+  CourseSchema,
+  type CourseSitemapEntry,
+  CourseSitemapEntrySchema,
+  type CourseWrite,
+  type CreditReduction,
+  CreditReductionSchema,
+  type Department,
+  DepartmentSchema,
+  type Faculty,
+  FacultySchema,
+  mapLetterGradeFilterToMinAverageGrade,
+} from "./course-types"
+
+export interface CourseRepository {
+  findMany(
+    handle: DBHandle,
+    query: CourseFilterQuery,
+    offset: number,
+    limit: number
+  ): Promise<{ courses: CourseListItem[]; totalCount: number }>
+  findAll(handle: DBHandle): Promise<Course[]>
+  find(handle: DBHandle, code: string): Promise<CourseDetail | null>
+  create(handle: DBHandle, data: CourseWrite): Promise<Course>
+  update(handle: DBHandle, id: CourseId, data: Partial<CourseWrite>): Promise<Course>
+  findManyFaculties(handle: DBHandle): Promise<Faculty[]>
+  findManyDepartments(handle: DBHandle): Promise<Department[]>
+  findManySitemapEntries(handle: DBHandle): Promise<CourseSitemapEntry[]>
+  upsertCreditReduction(handle: DBHandle, data: CourseCreditReductionWrite): Promise<CreditReduction>
+}
+
+export function getCourseRepository(): CourseRepository {
+  return {
+    async findMany(handle, query, offset, limit) {
+      const sortOrder = query.orderBy ?? "desc"
+      const sortBy = query.sortBy ?? []
+
+      const bySearch = query.bySearch?.trim()
+      const searchContains = bySearch ? `%${bySearch}%` : undefined
+
+      const bySemester = query.bySemester ?? []
+      const byTeachingLanguage = query.byTeachingLanguage ?? []
+      const byCampus = query.byCampus ?? []
+      const byMinGrade = query.byMinGrade
+      const minAverageGrade = byMinGrade != null ? mapLetterGradeFilterToMinAverageGrade(byMinGrade) : null
+
+      const rows = await handle.$queryRawTyped(
+        sql.findManyCourses(
+          offset,
+          limit,
+          bySearch || null,
+          searchContains ?? null,
+          bySemester,
+          byTeachingLanguage,
+          byCampus,
+          minAverageGrade,
+          sortOrder,
+          sortBy[0] ?? null,
+          sortBy[1] ?? null,
+          sortBy[2] ?? null
+        )
+      )
+
+      const totalCount = rows[0]?.totalCount ?? 0
+      const courses = parseOrReport(CourseListItemSchema.array(), rows)
+
+      return { courses, totalCount }
+    },
+
+    async findAll(handle) {
+      const courses = await handle.course.findMany()
+
+      return parseOrReport(CourseSchema.array(), courses)
+    },
+
+    async find(handle, code) {
+      const course = await handle.course.findUnique({
+        where: { code: code.toUpperCase() },
+        include: {
+          faculty: true,
+          department: true,
+          gradeDistributions: true,
+          creditReductions: {
+            orderBy: [{ reductionAmount: "desc" }, { overlapCourse: { code: "asc" } }],
+            include: {
+              overlapCourse: true,
+            },
+          },
+          aliases: {
+            orderBy: {
+              alias: "asc",
+            },
+          },
+        },
+      })
+
+      return parseOrReport(CourseDetailSchema.nullable(), course)
+    },
+
+    async create(handle, data) {
+      const course = await handle.course.create({
+        data,
+      })
+
+      return parseOrReport(CourseSchema, course)
+    },
+
+    async update(handle, id, data) {
+      const course = await handle.course.update({
+        where: { id },
+        data,
+      })
+
+      return parseOrReport(CourseSchema, course)
+    },
+
+    async findManyFaculties(handle) {
+      const faculties = await handle.faculty.findMany()
+
+      return parseOrReport(FacultySchema.array(), faculties)
+    },
+
+    async findManyDepartments(handle) {
+      const departments = await handle.department.findMany()
+
+      return parseOrReport(DepartmentSchema.array(), departments)
+    },
+
+    async findManySitemapEntries(handle) {
+      const courses = await handle.course.findMany({
+        select: { code: true, updatedAt: true, nameEn: true },
+        orderBy: { code: "asc" },
+      })
+
+      return parseOrReport(CourseSitemapEntrySchema.array(), courses)
+    },
+
+    async upsertCreditReduction(handle, data: CourseCreditReductionWrite): Promise<CreditReduction> {
+      const creditReduction = await handle.creditReduction.upsert({
+        where: {
+          courseId_overlapCourseId: {
+            courseId: data.courseId,
+            overlapCourseId: data.overlapCourseId,
+          },
+        },
+        create: {
+          courseId: data.courseId,
+          overlapCourseId: data.overlapCourseId,
+          reductionAmount: data.reductionAmount,
+        },
+        update: {
+          reductionAmount: data.reductionAmount,
+        },
+      })
+
+      return parseOrReport(CreditReductionSchema, creditReduction)
+    },
+  }
+}

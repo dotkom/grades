@@ -1,0 +1,71 @@
+{
+  "name": "@grades/frontend",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 5001",
+    "build": "next build",
+    "docker:build": "docker build -t grades-frontend:latest -f Dockerfile --progress plain ../..",
+    "start": "next start",
+    "lint": "biome check . --write",
+    "lint-check": "biome check .",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@date-fns/tz": "^1.2.0",
+    "@grades/environment": "workspace:*",
+    "@grades/logger": "workspace:*",
+    "@grades/utils": "workspace:*",
+    "@heroui/react": "^3.2.6",
+    "@heroui/styles": "^3.2.6",
+    "@next/env": "^16.3.4",
+    "@sentry/nextjs": "^10.52.0",
+    "@tabler/icons-react": "^3.35.0",
+    "@tanstack/react-query": "^5.79.0",
+    "@trpc/client": "11.8.1",
+    "@trpc/next": "11.8.1",
+    "@trpc/tanstack-react-query": "11.8.1",
+    "core-js": "^3.45.1",
+    "date-fns": "^4.1.0",
+    "import-in-the-middle": "^3.0.1",
+    "isomorphic-dompurify": "^3.23.0",
+    "jsdom": "28.1.0",
+    "next": "16.4.1",
+    "next-intl": "^4.8.3",
+    "next-plausible": "^3.12.4",
+    "next-themes": "^0.4.6",
+    "nuqs": "^2.8.9",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-hook-form": "^7.71.2",
+    "recharts": "^3.7.0",
+    "require-in-the-middle": "^8.0.1",
+    "superjson": "^2.0.0",
+    "use-debounce": "^10.0.5",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.16",
+    "@grades/backend": "workspace:*",
+    "@tailwindcss/postcss": "4.1.18",
+    "@types/node": "22.20.5",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "postcss": "8.5.30",
+    "tailwindcss": "4.3.0",
+    "tslib": "2.8.1",
+    "typescript": "7.0.2"
+  },
+  "browserslist": {
+    "production": [
+      "defaults",
+      "ios_saf >= 10"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

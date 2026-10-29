@@ -1,0 +1,148 @@
+import { type Context, SpanStatusCode } from "@opentelemetry/api"
+import { logs } from "@opentelemetry/api-logs"
+import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-proto"
+import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-proto"
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto"
+import { WinstonInstrumentation } from "@opentelemetry/instrumentation-winston"
+import { awsEcsDetector } from "@opentelemetry/resource-detector-aws"
+import { containerDetector } from "@opentelemetry/resource-detector-container"
+import { type Resource, detectResources, resourceFromAttributes } from "@opentelemetry/resources"
+import { BatchLogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs"
+import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics"
+import { NodeSDK } from "@opentelemetry/sdk-node"
+import { BatchSpanProcessor, type ReadableSpan, type Span, type SpanProcessor } from "@opentelemetry/sdk-trace-node"
+import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions"
+import { OpenTelemetryTransportV3 } from "@opentelemetry/winston-transport"
+import { PrismaInstrumentation } from "@prisma/instrumentation"
+import winston from "winston"
+
+/** When set on a span, the exporter keeps it only if the span status is an error. */
+export const EXPORT_SPAN_ON_ERROR_ATTRIBUTE = "app.trace.export_on_error"
+
+/**
+ * Drops successful spans that opted into error-only export.
+ *
+ * The span is still recorded in-process. This only decides whether it is queued for OTLP.
+ */
+class ExportOnErrorSpanProcessor implements SpanProcessor {
+  private readonly inner: SpanProcessor
+
+  constructor(inner: SpanProcessor) {
+    this.inner = inner
+  }
+
+  onStart(span: Span, parentContext: Context): void {
+    this.inner.onStart(span, parentContext)
+  }
+
+  onEnd(span: ReadableSpan): void {
+    const exportOnError = span.attributes[EXPORT_SPAN_ON_ERROR_ATTRIBUTE] === true
+    if (exportOnError && span.status.code !== SpanStatusCode.ERROR) {
+      return
+    }
+
+    this.inner.onEnd(span)
+  }
+
+  shutdown(): Promise<void> {
+    return this.inner.shutdown()
+  }
+
+  forceFlush(): Promise<void> {
+    return this.inner.forceFlush()
+  }
+}
+
+export function getResource(serviceName: string, version = "0.1.0"): Resource {
+  return resourceFromAttributes({
+    [ATTR_SERVICE_NAME]: serviceName,
+    [ATTR_SERVICE_VERSION]: version,
+  }).merge(
+    detectResources({
+      detectors: [containerDetector, awsEcsDetector],
+    })
+  )
+}
+
+/**
+ * OpenTelemetry instrumentation for Monoweb.
+ *
+ * NOTE: The OpenTelemetry exporters are only available for Node at the moment, and as such this should never be used
+ * in the browser.
+ */
+export function startOpenTelemetry(resource: Resource) {
+  const logRecordProcessor = new BatchLogRecordProcessor(new OTLPLogExporter())
+  const loggerProvider = new LoggerProvider({ resource, processors: [logRecordProcessor] })
+  const telemetry = new NodeSDK({
+    resource,
+    metricReader: new PeriodicExportingMetricReader({ exporter: new OTLPMetricExporter() }),
+    spanProcessors: [new ExportOnErrorSpanProcessor(new BatchSpanProcessor(new OTLPTraceExporter()))],
+    logRecordProcessors: [logRecordProcessor],
+    instrumentations: [new WinstonInstrumentation(), new PrismaInstrumentation()],
+  })
+  telemetry.start()
+  logs.setGlobalLoggerProvider(loggerProvider)
+  const logger = getLogger("opentelemetry")
+
+  process.on("SIGTERM", () =>
+    telemetry
+      .shutdown()
+      .then(() => logger.error("OpenTelemetry terminated"))
+      .catch((e) => logger.error("OpenTelemetry failed to terminate: %o", e))
+  )
+  process.on("beforeExit", () =>
+    telemetry
+      .shutdown()
+      .then(() => logger.error("OpenTelemetry terminated"))
+      .catch((e) => logger.error("OpenTelemetry failed to terminate: %o", e))
+  )
+
+  logger.info("Using opentelemetry otlp endpoint: %s", process.env.OTEL_EXPORTER_OTLP_ENDPOINT ?? "localhost:4317")
+  logger.info("OpenTelemetry instrumentation installed (service-name=%s)", resource.attributes[ATTR_SERVICE_NAME])
+  return telemetry
+}
+
+interface Message {
+  level: string
+  message: string
+  timestamp: string
+  identifier: string
+}
+
+function padWithColor(str: string, desiredLength: number) {
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: this needs it
+  const ansiEscapeCodes = /\x1b\[[0-9;]*m/g // Regex to match ANSI escape codes
+  const visibleLength = str.replace(ansiEscapeCodes, "").length // Length of string without ANSI codes
+  const paddingLength = desiredLength - visibleLength // Calculate how much padding is needed
+  return str + " ".repeat(paddingLength) // Pad the string with spaces
+}
+export type Logger = ReturnType<typeof getLogger>
+
+const formatMessage = ({ level, message, timestamp, identifier }: Message) => {
+  const levelPadded = padWithColor(level, 7)
+  const dim = "\x1b[2m"
+  const reset = "\x1b[0m"
+  return `${levelPadded}[${timestamp}] ${message} ${dim}(${identifier})${reset}`
+}
+
+// biome-ignore lint/suspicious/noExplicitAny: safe for any constructor name here
+export function getLogger(name: string | (new (...args: any[]) => any)): winston.Logger {
+  const identifier = name instanceof Function ? name.name : name
+  const format = winston.format.combine(
+    winston.format.splat(),
+    winston.format.colorize(),
+    winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+    winston.format.printf((msg) =>
+      formatMessage({
+        level: msg.level,
+        message: msg.message as string,
+        timestamp: msg.timestamp as string,
+        identifier,
+      })
+    )
+  )
+  return winston.createLogger({
+    level: "info",
+    transports: [new winston.transports.Console({ format }), new OpenTelemetryTransportV3({ format })],
+  })
+}
